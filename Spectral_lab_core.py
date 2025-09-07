@@ -270,7 +270,7 @@ class JWST_Spectral_lab:
         model_components["redshift"] = self.z  # Observed redshift
         model_components["exponential"] = exponential
         model_components["dust"] = dust
-        with pyfits.open("/Users/jansen/JADES/LSFs/jwst_nirspec_prism_disp.fits") as hdul:
+        with pyfits.open("/Data/jwst_nirspec_prism_disp.fits") as hdul:
             model_components["R_curve"] = np.c_[1e4*hdul[1].data["WAVELENGTH"], hdul[1].data["R"]]
 
         self.model = pipes.model_galaxy(
@@ -298,7 +298,7 @@ class JWST_Spectral_lab:
         model_components["redshift"] = self.z  # Observed redshift
         model_components["exponential"] = exponential
         model_components["dust"] = dust
-        with pyfits.open("/Users/jansen/JADES/LSFs/jwst_nirspec_prism_disp.fits") as hdul:
+        with pyfits.open(pth+".Data/jwst_nirspec_prism_disp.fits") as hdul:
             model_components["R_curve"] = np.c_[1e4*hdul[1].data["WAVELENGTH"], hdul[1].data["R"]]
 
 
