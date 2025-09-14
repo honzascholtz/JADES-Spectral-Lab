@@ -41,8 +41,8 @@ class JWST_Spectral_lab:
         -------
         """
 
-        import Check_setup as grid_check
-        grid_check.check_setup()
+        #import Check_setup as grid_check
+        #grid_check.check_setup()
 
         self.fig = plt.figure(figsize=(15.6, 8))
         self.fig.canvas.manager.set_window_title('vicube')
@@ -60,7 +60,7 @@ class JWST_Spectral_lab:
             self.data_error = hdu['ERR'].data*1e-7
             
         self.ax0.plot(self.data_wave, self.data_flux, color='black', drawstyle='steps-mid')
-        self.z = 7.43
+        self.z = 9.431
         self.Mass = 9.
         self.age = 0.3
         self.tau = 0.3
@@ -80,11 +80,11 @@ class JWST_Spectral_lab:
         x0 = 0.1
 
         # Redshift slider
-        self.slider_z_ax = plt.axes([x0, y0, 0.8, 0.03])
-        self.z_slider = Slider(self.slider_z_ax, 'redshift', valmin=1,
-                                   valmax=15,
-                                    valinit=self.z)
-        self.z_slider.on_changed(self.slide_update)
+        #self.slider_z_ax = plt.axes([x0, y0, 0.8, 0.03])
+        #self.z_slider = Slider(self.slider_z_ax, 'redshift', valmin=1,
+        #                      valmax=15,
+        #                      valinit=self.z)
+        #self.z_slider.on_changed(self.slide_update)
 
         # Mass Slider
         self.slider_mass_ax = plt.axes([x0, y0-dy, 0.8, 0.03])
@@ -95,28 +95,28 @@ class JWST_Spectral_lab:
 
         # Log U slider
         self.slider_logU_ax = plt.axes([x0, y0-2*dy, 0.8, 0.03])
-        self.logU_slider = Slider(self.slider_logU_ax, 'logU', valmin=-4.01,
+        self.logU_slider = Slider(self.slider_logU_ax, 'Radiation\nstrength', valmin=-4.01,
                                    valmax=-1,
                                     valinit=-2)
         self.logU_slider.on_changed(self.slide_update)
 
         # Metal Slider
         self.slider_metal_ax = plt.axes([x0, y0-3*dy, 0.8, 0.03])
-        self.metal_slider = Slider(self.slider_metal_ax, 'metal', valmin=0.01,
+        self.metal_slider = Slider(self.slider_metal_ax, 'Heavy\nelements', valmin=0.01,
                                    valmax=1.4,
                                     valinit=0.5)
         self.metal_slider.on_changed(self.slide_update)
     
         # Age Slider
         self.slider_age_ax = plt.axes([x0, y0-4*dy, 0.8, 0.03])
-        self.age_slider = Slider(self.slider_age_ax, 'age', valmin=-2,
+        self.age_slider = Slider(self.slider_age_ax, 'Age of Stars', valmin=-2,
                                  valmax=1,
                                  valinit=-1)
         self.age_slider.on_changed(self.slide_update)
 
         # Age Slider
         self.slider_tau_ax = plt.axes([x0, y0-5*dy, 0.8, 0.03])
-        self.tau_slider = Slider(self.slider_tau_ax, 'Tau', valmin=-2,
+        self.tau_slider = Slider(self.slider_tau_ax, 'Decline of stars', valmin=-2,
                                  valmax=1,
                                  valinit=-1)
         self.tau_slider.on_changed(self.slide_update)
@@ -128,9 +128,9 @@ class JWST_Spectral_lab:
                                  valinit=0.2)
         self.dust_slider.on_changed(self.slide_update)
         # Text box for redshift input
-        axbox = plt.axes([0.95, y0, 0.03, 0.03])
-        text_box = TextBox(axbox, '', initial='')
-        text_box.on_submit(self.submit_redshift)
+        #axbox = plt.axes([0.95, y0, 0.03, 0.03])
+        #text_box = TextBox(axbox, '', initial='')
+        #text_box.on_submit(self.submit_redshift)
 
         # Button to load SF943 data
         axbutton1 = plt.axes([0.1,0.9, 0.05,0.05])
@@ -178,6 +178,7 @@ class JWST_Spectral_lab:
             self.data_error = hdu['ERR'].data*1e-7
 
             self.target = 'generic'
+            self.z = 9.436
 
             self.plot_general()
         
@@ -186,6 +187,8 @@ class JWST_Spectral_lab:
             self.data_wave = hdu['WAVELENGTH'].data*1e6
             self.data_flux = hdu['DATA'].data*1e-7
             self.data_error = hdu['ERR'].data*1e-7
+
+            self.z = 2.820
 
             self.target = 'generic'
 
@@ -197,6 +200,8 @@ class JWST_Spectral_lab:
             self.data_flux = hdu['DATA'].data*1e-7
             self.data_error = hdu['ERR'].data*1e-7
 
+            self.z = 5.4431
+
             self.target = 'generic'
 
             self.plot_general()
@@ -206,6 +211,8 @@ class JWST_Spectral_lab:
             self.data_wave = hdu['WAVELENGTH'].data*1e6
             self.data_flux = hdu['DATA'].data*1e-7
             self.data_error = hdu['ERR'].data*1e-7
+
+            self.z = 3.6591
 
             self.target = 'generic'
 
@@ -217,6 +224,8 @@ class JWST_Spectral_lab:
             self.data_flux = hdu['DATA'].data*1e-7
             self.data_error = hdu['ERR'].data*1e-7
 
+            self.z = 14.18
+
             self.target = 'GSz14'
 
             self.plot_general()
@@ -227,6 +236,8 @@ class JWST_Spectral_lab:
             self.data_flux = hdu['DATA'].data*1e-7
             self.data_error = hdu['ERR'].data*1e-7
 
+            self.z = 6.856
+
             self.data_wave = np.append(self.data_wave, np.linspace(5.32,5.5, 32))
             self.data_flux = np.append(self.data_flux, np.zeros(32))
             self.data_error = np.append(self.data_error, np.ones(32)*0.001e-18)
@@ -236,7 +247,7 @@ class JWST_Spectral_lab:
             self.target = 'generic'
 
     def slide_update(self,val):
-        self.z = self.z_slider.val
+        #self.z = self.z_slider.val
         self.Mass = self.mass_slider.val
         self.U = self.logU_slider.val
         self.Z = self.metal_slider.val
@@ -270,7 +281,7 @@ class JWST_Spectral_lab:
         model_components["redshift"] = self.z  # Observed redshift
         model_components["exponential"] = exponential
         model_components["dust"] = dust
-        with pyfits.open("/Data/jwst_nirspec_prism_disp.fits") as hdul:
+        with pyfits.open(pth + "/Data/jwst_nirspec_prism_disp.fits") as hdul:
             model_components["R_curve"] = np.c_[1e4*hdul[1].data["WAVELENGTH"], hdul[1].data["R"]]
 
         self.model = pipes.model_galaxy(
@@ -298,7 +309,7 @@ class JWST_Spectral_lab:
         model_components["redshift"] = self.z  # Observed redshift
         model_components["exponential"] = exponential
         model_components["dust"] = dust
-        with pyfits.open(pth+".Data/jwst_nirspec_prism_disp.fits") as hdul:
+        with pyfits.open(pth+"/Data/jwst_nirspec_prism_disp.fits") as hdul:
             model_components["R_curve"] = np.c_[1e4*hdul[1].data["WAVELENGTH"], hdul[1].data["R"]]
 
 
