@@ -316,6 +316,7 @@ class JWST_Spectral_lab_redshift:
             'Pa$\\gamma$'         : ( 10940.978,  0.03, 0.95),
             r'[Fe$^{+}$]'  : ( 12570.200, -0.015, 0.50),
             'Pa$\\beta$'          : ( 12821.432,  0.015, 0.95),
+            'Pa$\\alpha$'          : ( 18755.80357,  0.015, 0.95),
         }
         n_lines = len(emlines)+1
         cmap = matplotlib.colormaps['nipy_spectral']
