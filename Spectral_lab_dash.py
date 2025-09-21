@@ -481,7 +481,7 @@ class JADES_spectral_lab:
                     yref='paper',
                     bgcolor='white',
                     bordercolor=color,
-                    font=dict(size=14, color=color),  # Increased from 10 to 14 and added color
+                    font=dict(size=16, color=color),  # Increased from 10 to 16 and added color
                     borderwidth=1
                 )
         

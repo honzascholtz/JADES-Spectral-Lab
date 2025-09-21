@@ -274,7 +274,7 @@ class Redshift_dash:
                 yref='paper',
                 bgcolor='white',
                 bordercolor=color,
-                font=dict(size=10)
+                font=dict(size=16)
             )
         
         # Set layout
