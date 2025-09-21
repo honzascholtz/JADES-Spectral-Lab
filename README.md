@@ -10,30 +10,51 @@ The bottom panel are the residuals between your current model and the data. This
 
 The model we are trying to fit is quite simple, using exponential star formation history and nebular emission lines. The parameters of the model are as follows: 
 
-1) Redshift of the source
 
-2) stellar mass of the source
+1) stellar mass of the source
 
-3) logU - Strength of the radiation field
+2) logU - Strength of the radiation field
 
-4) Metallicity - amount of elements heavier than Hydrogen and Helium in the galaxy
+3) Metallicity - amount of elements heavier than Hydrogen and Helium in the galaxy
 
-5) 6)  Age, Tau - describe a pattern where the rate at which stars form in a galaxy decreases exponentially over time. This means that the star formation rate initially is high, but then declines, with the rate of decline becoming slower over time. The age sets when the star-formation episode started and Tau is the rate at which the star formation is declining 
-
-
-7) Dust - amount of dust in the galaxy (for scientists: Calzetti 2000)
+4) 5)  Age, Tau - describe a pattern where the rate at which stars form in a galaxy decreases exponentially over time. This means that the star formation rate initially is high, but then declines, with the rate of decline becoming slower over time. The age sets when the star-formation episode started and Tau is the rate at which the star formation is declining 
 
 
+6) Dust - amount of dust in the galaxy (for scientists: Calzetti 2000)
 
 
 # How to run 
 
 In order to run the code, we need to install Bagpipes from Adam Carnall. You can find more info about Bagpipes <a href="https://bagpipes.readthedocs.io/en/latest/" target=_blank>here</a>.
 
+requirements:
 ```python
-pip install bagpipes
+dash==2.14.1
 
-python SED_fitter.py
+dash-bootstrap-components==1.5.0
+
+plotly==5.17.0
+
+numpy==1.24.3
+
+astropy==5.3.4
+
+pandas==2.0.3
+
+bagpipes-phy==1.0.0
+```
+
+To run the redshifting code: 
+```python
+
+python Redshift_app.py
+
+```
+
+To run the the full SED fitting visualizer:
+```python
+
+python Spectral_lab_app.py
 
 ```
 
