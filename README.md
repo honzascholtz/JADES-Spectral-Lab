@@ -41,7 +41,7 @@ astropy==5.3.4
 
 pandas==2.0.3
 
-bagpipes-phy==1.0.0
+bagpipes
 ```
 
 To run the redshifting code: 

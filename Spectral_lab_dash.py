@@ -26,10 +26,12 @@ except ImportError:
 
 try:
     import bagpipes as pipes
+    pipes.config.max_redshift = 17
     BAGPIPES_AVAILABLE = True
 except ImportError:
     BAGPIPES_AVAILABLE = False
     print("Warning: bagpipes not available. Using mock model generation.")
+
 
 nan = float('nan')
 pi = np.pi
@@ -70,7 +72,6 @@ class JADES_spectral_lab:
             'SF2': {'file': '001927_prism_clear_v5.0_1D.fits', 'z': 3.6591, 'target': 'generic'},
             'PSB': {'file': '023286_prism_clear_v5.1_1D.fits', 'z': 1.781, 'target': 'generic'},
             'zhig': {'file': '066585_prism_clear_v5.1_1D.fits', 'z': 7.1404, 'target': 'low_snr'},
-            'zhig2': {'file': '003991_prism_clear_v5.1_1D.fits', 'z': 10.603, 'target': 'gnz11'}
         }
         
         # Load initial data and setup
@@ -307,7 +308,6 @@ class JADES_spectral_lab:
                         dbc.Button("SF2", id="btn-SF2", color="info", size="sm"),
                         dbc.Button("PSB", id="btn-PSB", color="info", size="sm"),
                         dbc.Button("zhig", id="btn-zhig", color="info", size="sm"),
-                        dbc.Button("zhig2", id="btn-zhig2", color="info", size="sm"),
                     ], className="mb-3")
                 ], width=12)
             ]),
@@ -326,14 +326,14 @@ class JADES_spectral_lab:
                 dbc.Col([
                     html.Div([
                         html.Label("Mass [log(M☉)]", className="fw-bold mb-2"),
-                        dcc.Slider(id="mass-slider", min=7, max=12, step=0.1, value=9,
+                        dcc.Slider(id="mass-slider", min=7, max=12, step=0.1, value=8,
                                   marks={i: str(i) for i in range(7, 13)},
                                   tooltip={"placement": "bottom", "always_visible": True})
                     ], className="mb-4"),
                     
                     html.Div([
                         html.Label("Radiation Strength [log U]", className="fw-bold mb-2"),
-                        dcc.Slider(id="logU-slider", min=-4.01, max=-1, step=0.1, value=-2,
+                        dcc.Slider(id="logU-slider", min=-4.01, max=-1, step=0.1, value=-2.5,
                                   marks={-4: '-4', -3: '-3', -2: '-2', -1: '-1'},
                                   tooltip={"placement": "bottom", "always_visible": True})
                     ], className="mb-4"),
@@ -357,14 +357,14 @@ class JADES_spectral_lab:
                     
                     html.Div([
                         html.Label("Decline of Stars [log Gyr]", className="fw-bold mb-2"),
-                        dcc.Slider(id="tau-slider", min=-2, max=1, step=0.1, value=-1,
+                        dcc.Slider(id="tau-slider", min=-2, max=1, step=0.1, value=-1.4,
                                   marks={-2: '0.01', -1: '0.1', 0: '1', 1: '10'},
                                   tooltip={"placement": "bottom", "always_visible": True})
                     ], className="mb-4"),
                     
                     html.Div([
                         html.Label("Dust [Av mag]", className="fw-bold mb-2"),
-                        dcc.Slider(id="dust-slider", min=0, max=3, step=0.1, value=0.2,
+                        dcc.Slider(id="dust-slider", min=0, max=3, step=0.1, value=0.5,
                                   marks={0: '0', 1: '1', 2: '2', 3: '3'},
                                   tooltip={"placement": "bottom", "always_visible": True})
                     ], className="mb-4")
@@ -552,8 +552,3 @@ class JADES_spectral_lab:
     def run_server(self, debug=True, port=8051):
         """Run the Dash server"""
         self.app.run(debug=debug, port=port)
-
-# Create and run the app
-if __name__ == '__main__':
-    app = JWSTStellarPopulationDash()
-    app.run_server(debug=True)

@@ -65,6 +65,7 @@ def check_setup():
     import bagpipes as pipes
 
     path_bagpipes = os.path.dirname(pipes.__file__)
+    print(f'Checking Bagpipes setup in {path_bagpipes}')
 
     zmax = pipes.config.max_redshift
     if zmax<15:
@@ -74,4 +75,7 @@ def check_setup():
         input_pth = os.path.join(path_bagpipes, 'config.py')
         os.system(f'cp {local_pth} {input_pth}')
         
-        raise TypeError("Bagpipes is configured with a maximum redshift of 17. Please restart the code.")
+        raise TypeError("Bagpipes is now configured with a maximum redshift of 17. Please restart the code.")
+    
+
+check_setup()

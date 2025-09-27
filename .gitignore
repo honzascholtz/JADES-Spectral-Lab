@@ -1,3 +1,4 @@
 __pycache__/SED_class.cpython-311.pyc
 .DS_Store
 /__pycache__
+*.pyc

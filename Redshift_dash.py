@@ -112,7 +112,8 @@ class Redshift_dash:
             'Hδ': (4102.860, 'orange'),
             'Hγ': (4341.647, 'pink'),
             'Hβ': (4862.647, 'brown'),
-            r'[O⁺⁺]': (4960.0, 'red'),  # Simplified to single line
+            r'': (4960.0, 'red'),  # Simplified to single line
+            r'[O⁺⁺]': (5008.0, 'red'),  # Simplified to single line
             r'[O⁰]': (6302.0, 'green'),  # Simplified to single line
             'Na': (5891.583, 'yellow'),
             'Hα': (6564.522, 'red'),
@@ -128,7 +129,7 @@ class Redshift_dash:
         visible_lines = {}
         for line_name, (rest_wave, color) in emlines.items():
             obs_wave = rest_wave * (1 + self.z) / 1.e4
-            if 0.5 * 1.001 < obs_wave < 5.3 * 0.999:
+            if 0.5 * 1.001 < obs_wave < 5.5 * 0.999:
                 visible_lines[line_name] = (obs_wave, color)
         
         return visible_lines
@@ -178,7 +179,7 @@ class Redshift_dash:
                         id="redshift-slider",
                         min=1,
                         max=15,
-                        step=0.01,
+                        step=0.001,
                         value=1,
                         marks={i: str(i) for i in range(1, 16)},
                         tooltip={"placement": "bottom", "always_visible": True}
