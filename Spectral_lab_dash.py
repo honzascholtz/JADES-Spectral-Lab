@@ -312,13 +312,12 @@ class JADES_spectral_lab:
                 ], width=12)
             ]),
             
-            # Main plots - much closer together
+            # Main plot only
             dbc.Row([
                 dbc.Col([
-                    dcc.Graph(id="main-plot", style={'height': '500px', 'margin-bottom': '0px'}),
-                    dcc.Graph(id="residual-plot", style={'height': '200px'})
+                    dcc.Graph(id="main-plot", style={'height': '600px'}),
                 ], width=12)
-            ], style={'margin-bottom': '10px'}),
+            ], style={'margin-bottom': '60px'}),
             
             # Parameter sliders - organized in two columns
             dbc.Row([
@@ -377,8 +376,7 @@ class JADES_spectral_lab:
         
         # Combined callback for all interactions
         @self.app.callback(
-            [Output("main-plot", "figure"),
-             Output("residual-plot", "figure")],
+            Output("main-plot", "figure"),
             [Input("mass-slider", "value"),
              Input("logU-slider", "value"),
              Input("metal-slider", "value"),
@@ -413,11 +411,9 @@ class JADES_spectral_lab:
             # Generate model with current parameters
             self.generate_model()
             
-            # Create plots
+            # Create plot
             main_fig = self.create_main_plot()
-            residual_fig = self.create_residual_plot()
-            
-            return main_fig, residual_fig
+            return main_fig
     
     def create_main_plot(self):
         """Create the main spectral plot"""
@@ -458,7 +454,7 @@ class JADES_spectral_lab:
             y=self.data_flux / 1e-18,
             mode='lines',
             line=dict(color='black', shape='hv'),
-            name='Observed',
+            name='Observations',
             showlegend=True
         ))
         
@@ -481,21 +477,24 @@ class JADES_spectral_lab:
                     yref='paper',
                     bgcolor='white',
                     bordercolor=color,
-                    font=dict(size=16, color=color),  # Increased from 10 to 16 and added color
+                    font=dict(size=18, color=color),
                     borderwidth=1
                 )
-        
+        fig.add_annotation(
+                text=f"Your Score: {self.calculate_score():.2f} (smaller is better)",
+                x=0.021, y=0.85, xref="paper", yref="paper",
+                showarrow=False, font=dict(size=16, color="red"),
+                bgcolor="yellow", bordercolor="red")
         # Set layout
         fig.update_layout(
-            title=f"JWST Spectrum - z={self.z:.3f} | χ² Score: {self.calculate_score():.2f} (smaller is better)",
+            #title=f"JWST Spectrum - z={self.z:.3f} | χ² Score: {self.calculate_score():.2f} (smaller is better)",
             xaxis_title="Wavelength [μm]",
             yaxis_title="Flux [10⁻¹⁸ erg/s/cm²/Å]",
-            xaxis=dict(range=[0.5, 5.3]),
+            xaxis=dict(range=[0.5, 5.5]),
             template="plotly_white",
-            height=500,
+            height=600,
             legend=dict(x=0.02, y=0.98),
-            title_font_size=16,
-            margin=dict(b=10)  # Reduced bottom margin to get closer to residual plot
+            legend_font_size=16
         )
         
         # Set y-axis limits based on target type
@@ -505,47 +504,6 @@ class JADES_spectral_lab:
             fig.update_yaxes(range=[-0.01, 0.04])
         elif self.target == 'low_snr':
             fig.update_yaxes(range=[-0.01, 0.025])
-        
-        return fig
-    
-    def create_residual_plot(self):
-        """Create the residual plot"""
-        global BAGPIPES_AVAILABLE
-        if self.data_wave is None or self.model_spectrum is None:
-            return go.Figure()
-        
-        fig = go.Figure()
-        
-        # Check if model is valid (removed universe age check)
-        model_valid = (len(self.model_spectrum) > 0 and
-                      np.nansum(self.model_spectrum[:, 1]) > 0)
-        
-        if model_valid and len(self.model_spectrum[:, 1]) == len(self.data_flux):
-            # Calculate residuals
-            residuals = (self.data_flux - self.model_spectrum[:, 1]) / self.data_error
-            
-            # Add residuals (no error shading)
-            fig.add_trace(go.Scatter(
-                x=self.data_wave,
-                y=residuals,
-                mode='lines',
-                line=dict(color='black', shape='hv'),
-                name='Residuals',
-                showlegend=False
-            ))
-            
-            # Add zero line
-            fig.add_hline(y=0, line=dict(color='red', dash='dash', width=1.5))
-        
-        # Set layout
-        fig.update_layout(
-            xaxis_title="Wavelength [μm]",
-            yaxis_title="Residuals [σ]",
-            xaxis=dict(range=[0.5, 5.3]),
-            template="plotly_white",
-            height=200,
-            margin=dict(t=5, b=40)  # Very small top margin to get close to main plot
-        )
         
         return fig
     

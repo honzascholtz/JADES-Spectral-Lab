@@ -166,8 +166,8 @@ class Redshift_dash:
             # Main plot
             dbc.Row([
                 dbc.Col([
-                    dcc.Graph(id="main-plot", style={'height': '600px'})
-                ], width=12)
+                    dcc.Graph(id="main-plot", style={'height': '460px'})
+                ], width=10)
             ]),
             
             # Redshift slider
@@ -302,12 +302,12 @@ class Redshift_dash:
         
         # Set layout
         fig.update_layout(
-            title=f"JWST Spectrum - Redshift: {self.z:.3f}",
+            #title=f"JWST Spectrum - Redshift: {self.z:.3f}",
             xaxis_title="Wavelength (μm) - blue ← → red",
             yaxis_title="Brightness (×10⁻¹⁸)",
             xaxis=dict(range=[0.5, 5.3]),
             template="plotly_white",
-            height=600
+            height=500
         )
         
         # Set y-axis limits based on target type
@@ -320,6 +320,6 @@ class Redshift_dash:
         
         return fig
     
-    def run_server(self, debug=True, port=8050):
+    def run_server(self, debug=True, port=8051):
         """Run the Dash server"""
         self.app.run(debug=debug, port=port)
