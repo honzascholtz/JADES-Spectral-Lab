@@ -44,7 +44,6 @@ class Redshift_dash:
         self.z = 1
         self.target = 'generic'
         self.score = 0
-        self.show_score_flag = False
         
         # Data file configurations
         self.data_files = {
@@ -195,7 +194,10 @@ class Redshift_dash:
                 dbc.Col([
                     html.Div(id="score-display", className="mt-3")
                 ], width=12)
-            ])
+            ]),
+            
+            # Hidden div to store show_score state
+            dcc.Store(id="show-score-state", data=False)
         ], fluid=True)
     
     def setup_callbacks(self):
@@ -204,27 +206,47 @@ class Redshift_dash:
         # Combined callback for all interactions
         @self.app.callback(
             [Output("main-plot", "figure"),
-             Output("score-display", "children")],
+             Output("score-display", "children"),
+             Output("show-score-state", "data")],
             [Input("redshift-slider", "value"),
              Input("show-score-btn", "n_clicks")] + 
             [Input(f"btn-{dataset_key}", "n_clicks") for dataset_key in self.data_files.keys()],
+            [State("show-score-state", "data")],
             prevent_initial_call=False
         )
         def update_app(*args):
             ctx = callback_context
+            show_score_state = args[-1]  # Last argument is the State
+            
             if not ctx.triggered:
                 # Initial load
                 self.z = args[0]  # redshift slider value
-                return self.create_plot(), ""
+                return self.create_plot(), "", False
             
             trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
             
-            # Handle redshift slider
-            if trigger_id == "redshift-slider":
-                self.z = args[0]
-                return self.create_plot(), dash.no_update
+            # Handle show score button
+            if trigger_id == "show-score-btn":
+                self.z = args[0]  # Get current redshift
+                score = self.calculate_score()
+                score_text = dbc.Alert(
+                    [
+                        html.P(f"The aim is to get the score as close to 0 km/s as possible.", className="mb-2"),
+                        html.P(f"Score between -1000 and 1000 is amazing!", className="mb-2"),
+                        html.H4(f"Score: {score:.2f} km/s", className="alert-heading"),
+                        #html.P(f"Your redshift: z = {self.z:.3f}"),
+                        #html.P(f"True redshift: z = {self.ztrue:.3f}"),
+                    ],
+                    color="success" if abs(score) < 1000 else "warning" if abs(score) < 3000 else "danger"
+                )
+                return self.create_plot(), score_text, True
             
-            # Handle dataset buttons
+            # Handle redshift slider - hide score when moving slider
+            elif trigger_id == "redshift-slider":
+                self.z = args[0]
+                return self.create_plot(), "", False
+            
+            # Handle dataset buttons - hide score when changing dataset
             else:
                 for i, dataset_key in enumerate(self.data_files.keys()):
                     if trigger_id == f"btn-{dataset_key}":
@@ -232,10 +254,10 @@ class Redshift_dash:
                         if n_clicks:
                             self.load_data(dataset_key)
                             self.z = args[0]  # Keep current redshift slider value
-                            return self.create_plot(), ""
+                            return self.create_plot(), "", False
                         break
             
-            return dash.no_update, dash.no_update
+            return dash.no_update, dash.no_update, dash.no_update
     
     def create_plot(self):
         """Create the main spectral plot"""
@@ -280,7 +302,7 @@ class Redshift_dash:
         
         # Set layout
         fig.update_layout(
-            title=f"JWST Spectrum - Redshift: {self.z:.3f} (Score: {self.score:.0f})",
+            title=f"JWST Spectrum - Redshift: {self.z:.3f}",
             xaxis_title="Wavelength (μm) - blue ← → red",
             yaxis_title="Brightness (×10⁻¹⁸)",
             xaxis=dict(range=[0.5, 5.3]),
@@ -301,4 +323,3 @@ class Redshift_dash:
     def run_server(self, debug=True, port=8050):
         """Run the Dash server"""
         self.app.run(debug=debug, port=port)
-
