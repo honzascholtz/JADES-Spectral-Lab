@@ -18,6 +18,8 @@ import dash_bootstrap_components as dbc
 
 import numpy as np
 from astropy.modeling.models import Sersic2D
+from astropy.convolution import Gaussian2DKernel, convolve_fft
+
 import astropy.io.fits as pyfits
 import astropy.stats as stats
 nan = float('nan')
@@ -42,8 +44,8 @@ class JADES_photo_lab:
         self.amplitude = 1
         self.radius = 10
         self.index = 4
-        self.x = 84
-        self.y = 84
+        self.x = 0
+        self.y = 0
         self.ellipticity = 0.5
         self.theta = -1
 
@@ -78,27 +80,24 @@ class JADES_photo_lab:
         self.z = config['z']
         self.target = config['target']
         
-        try:
+        if 1==1:
             pth = sys.path[0] if sys.path[0] else '.'
             filepath = os.path.join(pth, 'Data/phot',config['file'])
             with pyfits.open(filepath) as hdu:
                 self.image = hdu['F444W'].data
+                self.image = self.image[ 84-self.image_lim:84+self.image_lim+1, 84-self.image_lim:84+self.image_lim+1]
+                
                 self.image_header = hdu['F444W'].header
                 self.image_error = stats.sigma_clipped_stats(self.image, sigma=3.0, maxiters=10)[2] * \
                      np.ones_like(self.image)  # Use stddev as error estimate
                 self.shape = self.image.shape
 
-                # Get the zoom region for better contrast calculation
-                self.x_min = max(0, int(self.x - self.image_lim))
-                self.x_max = min(self.shape[1], int(self.x + self.image_lim))
-                self.y_min = max(0, int(self.y - self.image_lim))
-                self.y_max = min(self.shape[0], int(self.y + self.image_lim))
-                
-            
-                
-        except Exception as e:
-            print(f"Error loading {config['file']}: {e}")
-            
+                self.psf_pixel = 	0.145/(self.image_header['CDELT1']*3600 ) / 2.355 # arcsec/pixel
+                self.PSF_kernel = Gaussian2DKernel(self.psf_pixel)  # Placeholder for PSF kernel if needed later
+
+
+        #except Exception as e:
+        #    print(f"Error loading {config['file']}: {e}")      
     
     def generate_model(self):
         """Generate model spectrum with current parameters"""
@@ -106,23 +105,19 @@ class JADES_photo_lab:
         x, y = np.meshgrid(np.arange(self.shape[1]), np.arange(self.shape[0]))
 
         self.model = Sersic2D(amplitude=self.amplitude, r_eff=self.radius, n=self.index,\
-                               x_0=self.x, y_0=self.y, ellip=self.ellipticity, theta=np.deg2rad(self.theta))
+                               x_0=self.x+self.image_lim, y_0=self.y+ self.image_lim, ellip=self.ellipticity, theta=np.deg2rad(self.theta))
         self.model_image = self.model(x, y)
-
+        self.model_image = convolve_fft(self.model_image, self.PSF_kernel)
         # Calculate residual
         self.residual = (self.image - self.model_image)/self.image_error
         
-    
     def calculate_score(self):
         """Calculate chi-squared score"""
-        
-        chi_squared = np.nansum(((self.image[self.y_min:self.y_max, self.x_min:self.x_max]\
-                                   - self.model_image[self.y_min:self.y_max, self.x_min:self.x_max]) / \
-                                   self.image_error[self.y_min:self.y_max, self.x_min:self.x_max]) ** 2)
-        dof = np.sum(~np.isnan(self.image[self.y_min:self.y_max, self.x_min:self.x_max])) - 7  # Number of data points minus number of parameters
+
+        chi_squared = np.nansum(((self.image - self.model_image) / self.image_error) ** 2)
+        dof = np.sum(~np.isnan(self.image)) - 7  # Number of data points minus number of parameters
         self.score = chi_squared / dof if dof > 0 else np.nan
         return self.score
-
     
     def setup_layout(self):
         """Setup the Dash app layout"""
@@ -162,7 +157,7 @@ class JADES_photo_lab:
                 dbc.Col([
                     html.Div([
                         html.Label("Peak size", className="fw-bold mb-2"),
-                        dcc.Slider(id="amp-slider", min=0.1, max=2, step=0.01, value=0.5,
+                        dcc.Slider(id="amp-slider", min=0.1, max=10, step=0.01, value=0.5,
                                   marks={i: str(i) for i in range(11)},
                                   tooltip={"placement": "bottom", "always_visible": True})
                     ], className="mb-4"),
@@ -193,15 +188,15 @@ class JADES_photo_lab:
                 dbc.Col([
                     html.Div([
                         html.Label("X", className="fw-bold mb-2"),
-                        dcc.Slider(id="x-slider", min=70, max=98, step=0.5, value=84,
-                                  marks={i: str(i) for i in range(70, 98)},
+                        dcc.Slider(id="x-slider", min=-5, max=5, step=0.1, value=0,
+                                  marks={i: str(i) for i in range(-5, 6)},
                                   tooltip={"placement": "bottom", "always_visible": True})
                     ], className="mb-4"),
                     
                     html.Div([
                         html.Label("Y", className="fw-bold mb-2"),
-                        dcc.Slider(id="y-slider", min=70, max=98, step=0.5, value=84,
-                                  marks={i: str(i) for i in range(70, 98)},
+                        dcc.Slider(id="y-slider", min=-5, max=5, step=0.1, value=0,
+                                  marks={i: str(i) for i in range(-5, 6)},
                                   tooltip={"placement": "bottom", "always_visible": True})
                     ], className="mb-4"),
                     
@@ -267,8 +262,7 @@ class JADES_photo_lab:
 
         # Better scaling for astronomical images using asinh (arcsinh) stretch
         # This is commonly used in astronomy as it handles both faint and bright features well
-        image_zoom = self.image[self.y_min:self.y_max, self.x_min:self.x_max]
-        model_zoom = self.model_image[self.y_min:self.y_max, self.x_min:self.x_max]
+        image_zoom = self.image
 
         # Calculate robust statistics for better scaling
         # Use percentiles to avoid outliers
@@ -293,7 +287,7 @@ class JADES_photo_lab:
         # Create subplots
         fig = make_subplots(
             rows=1, cols=3,
-            subplot_titles=("Observed Image (log)", "Model (log)", "Residual (Observed - Model)"),
+            subplot_titles=("Observed Image", "Your Model", "Difference (Observed - Model)"),
             horizontal_spacing=0.1
         )
         
@@ -303,22 +297,22 @@ class JADES_photo_lab:
                 z=image_scaled,
                 colorscale='Viridis',
                 showscale=True,
-                colorbar=dict(x=0.3, len=0.8, title="log10(Flux)")
+                colorbar=dict(x=0.3, len=0.8, title="Brightness")
             ),
             row=1, col=1
         )
-        
+
         # Add model image (log scale)
         fig.add_trace(
             go.Heatmap(
                 z=model_scaled,
                 colorscale='Viridis',
                 showscale=True,
-                colorbar=dict(x=0.63, len=0.8, title="log10(Flux)")
+                colorbar=dict(x=0.63, len=0.8, title="Brightness")
             ),
             row=1, col=2
         )
-        
+
         # Add residual (linear, with diverging colorscale)
         fig.add_trace(
             go.Heatmap(
@@ -327,30 +321,28 @@ class JADES_photo_lab:
                 showscale=True,
                 zmid=0,  # Center the colorscale at 0
                 zmin=-5, zmax=5,
-                colorbar=dict(x=1.0, len=0.8, title="Residual")
+                colorbar=dict(x=1, len=0.8, title="Residual",)
             ),
             row=1, col=3
         )
-        
+
         # Update layout
         fig.update_layout(
-            title=f"JWST Photometry Fit, score= {self.calculate_score():.2f}",
+            title=f"JWST Photometry Fit, score= {self.calculate_score():.2f}, lower is better",
             template="plotly_white",
             height=600,
             showlegend=False
         )
+        # Force equal aspect ratio for all subplots
+        fig.update_xaxes(scaleanchor="y", scaleratio=1, row=1, col=1, constrain="domain")
+        fig.update_yaxes(constrain="domain", row=1, col=1)
         
-        # Set zoom range for all subplots
-        x_range = [self.x - self.image_lim, self.x + self.image_lim]
-        y_range = [self.y - self.image_lim, self.y + self.image_lim]
+        fig.update_xaxes(scaleanchor="y2", scaleratio=1, row=1, col=2, constrain="domain")
+        fig.update_yaxes(constrain="domain", row=1, col=2)
         
-        fig.update_xaxes(range=x_range, title_text="X (pixels)", row=1, col=1)
-        fig.update_xaxes(range=x_range, title_text="X (pixels)", row=1, col=2)
-        fig.update_xaxes(range=x_range, title_text="X (pixels)", row=1, col=3)
+        fig.update_xaxes(scaleanchor="y3", scaleratio=1, row=1, col=3, constrain="domain")
+        fig.update_yaxes(constrain="domain", row=1, col=3)
         
-        fig.update_yaxes(range=y_range, title_text="Y (pixels)", row=1, col=1)
-        fig.update_yaxes(range=y_range, title_text="Y (pixels)", row=1, col=2)
-        fig.update_yaxes(range=y_range, title_text="Y (pixels)", row=1, col=3)
         
         return fig
 
