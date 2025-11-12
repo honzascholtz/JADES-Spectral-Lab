@@ -41,16 +41,4 @@ redshift_app = redshift.Redshift_lab(server, url_base_pathname='/redshift/')
 stellar_app = stellar.Stellar_pop_lab(server, url_base_pathname='/stellar-pop/')
 
 if __name__ == '__main__':
-    print("\n" + "="*60)
-    print("JWST Laboratory Suite - Multi-App Flask Server")
-    print("="*60)
-    print("\nStarting server on http://localhost:8051")
-    print("\nAvailable endpoints:")
-    print("  → Home:              http://localhost:8051/")
-    print("  → Photometry Lab:    http://localhost:8051/photometry/")
-    print("  → Redshift Lab:      http://localhost:8051/redshift/")
-    print("  → Stellar Pop Lab:   http://localhost:8051/stellar-pop/")
-    print("  → Health Check:      http://localhost:8051/api/health")
-    print("\n" + "="*60 + "\n")
-    
-    server.run(debug=True, port=8051)
+    server.run(debug=True)
