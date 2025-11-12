@@ -10,14 +10,13 @@ Three separate Dash apps integrated with Flask
 from flask import Flask,  render_template
 import dash_bootstrap_components as dbc
 
-import Phot_flask as phot
-import redshift_flask as redshift
-import stellar_flask as stellar
+import Labs.Phot_flask as phot
+import Labs.redshift_flask as redshift
+import Labs.stellar_flask as stellar
 
 
 # Create Flask server
 server = Flask(__name__)
-
 
 # ============================================================================
 # FLASK ROUTES
