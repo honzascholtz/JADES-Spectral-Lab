@@ -1,5 +1,5 @@
 
-import Spectral_lab_dash as sld
+import Spectral_lab_dash_mod as sld
 
 # Create and run the app
 if __name__ == '__main__':

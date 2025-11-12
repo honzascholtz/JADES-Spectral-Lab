@@ -15,6 +15,7 @@ from plotly.subplots import make_subplots
 import dash
 from dash import dcc, html, Input, Output, State, callback_context
 import dash_bootstrap_components as dbc
+from astropy.cosmology import Planck18 as cosmo
 
 # Try to import required packages, provide fallbacks if not available
 try:
@@ -155,7 +156,7 @@ class JADES_spectral_lab:
         global BAGPIPES_AVAILABLE
         if BAGPIPES_AVAILABLE:
             try:
-                exponential = {
+                delayed = {
                     "age": self.age,
                     "tau": self.tau,
                     "massformed": self.Mass,
@@ -169,7 +170,7 @@ class JADES_spectral_lab:
                 
                 model_components = {
                     "redshift": self.z,
-                    "exponential": exponential,
+                    "delayed": delayed,
                     "dust": dust
                 }
                 
@@ -204,7 +205,7 @@ class JADES_spectral_lab:
         global BAGPIPES_AVAILABLE
         if BAGPIPES_AVAILABLE and self.model is not None:
             try:
-                exponential = {
+                delayed = {
                     "age": self.age,
                     "tau": self.tau,
                     "massformed": self.Mass,
@@ -218,7 +219,7 @@ class JADES_spectral_lab:
                 
                 model_components = {
                     "redshift": self.z,
-                    "exponential": exponential,
+                    "delayed": delayed,
                     "dust": dust
                 }
                 
@@ -291,39 +292,16 @@ class JADES_spectral_lab:
         """Calculate age of universe at given redshift (simplified Planck 2018)"""
         # Simplified cosmology calculation for age of universe
         # Using Planck 2018 parameters: H0=67.4, Omega_m=0.315, Omega_Lambda=0.685
-        from scipy.integrate import quad
-        
-        H0 = 67.4  # km/s/Mpc
-        Om = 0.315
-        OL = 0.685
-        
-        def E(zp):
-            return np.sqrt(Om * (1 + zp)**3 + OL)
-        
-        try:
-            t_hubble = 9.78 / (H0 / 100)  # Hubble time in Gyr
-            integral, _ = quad(lambda zp: 1 / ((1 + zp) * E(zp)), z, np.inf)
-            age = t_hubble * integral
-            return age
-        except:
-            # Fallback approximation
-            return 13.8 / (1 + z)**1.5
-    
+
+        age = cosmo.age(z).value
+        return age
+
     def calculate_sfh(self):
         """Calculate delayed exponential star formation history"""
-        # Time array in Gyr
-        t = np.linspace(0, self.age * 1.2, 1000)
-        
-        # Delayed exponential: SFR(t) = t * exp(-t/tau)
-        sfr = t * np.exp(-t / self.tau)
-        
-        # Normalize to total mass formed
-        sfr = sfr / np.trapz(sfr, t) * 10**self.Mass
-        
-        # Convert times to age of universe
-        age_universe_now = self.get_universe_age(self.z)
-        age_universe = age_universe_now - (self.age - t)
-        
+        sfh = self.model.sfh
+        age_universe = (sfh.age_of_universe - sfh.ages)*10**-9
+        sfr = sfh.sfh
+
         return age_universe, sfr
     
     def setup_layout(self):
@@ -569,10 +547,17 @@ class JADES_spectral_lab:
             # Mark current age of universe
             age_now = self.get_universe_age(self.z)
             fig.add_vline(
+                x=0,
+                line=dict(color='red', dash='dash', width=2),
+                annotation_text="Big Bang",
+                annotation_position="top left"
+            )
+
+            fig.add_vline(
                 x=age_now,
                 line=dict(color='red', dash='dash', width=2),
-                annotation_text="Now",
-                annotation_position="top"
+                annotation_text="Galaxy Now",
+                annotation_position="top right"
             )
             
             # Set layout
@@ -587,6 +572,7 @@ class JADES_spectral_lab:
             )
             
             fig.update_yaxes(rangemode='tozero')
+            fig.update_xaxes(range=[ self.get_universe_age(self.z),0])
             
         except Exception as e:
             print(f"Error creating SFH plot: {e}")
