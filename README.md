@@ -1,26 +1,26 @@
-# JWST-Spectral-Lab
+# JADES-Spectral-Lab
 
-JWST-Spectral-Lab is an outreach activity designed to show students and the general public how SED fitting works and what we can learn from a spectrum. The entire thing is a wrapper around Bagpipes to create a best fitting model to various JWST prism spectra using sliders controlling various paramters. 
+JADES-Spectral-Lab is a suite of of three outreach activities, designed to show public how we analyze JWST NIRCam and NIRSpec data. The three activities are:
+
+1) Photometric lab - Fitting images to find their shapes
+
+![alt text](https://github.com/honzascholtz/SED_Fitter/blob/main/Images/Photometry.png "Example of the UI")
+
+
+2) The Redshift Lab - Determining the redshift of the galaxies from NIRSpec spectrocopy. 
+
+![alt text](https://github.com/honzascholtz/SED_Fitter/blob/main/Images/Redshift.png "Example of the UI")
+
+
+3) The Stellar Population Lab - Modelling the NIRspec spectra to find the masses, star-formation histories and interstellar gas properties in the galaxies. 
+
+![alt text](https://github.com/honzascholtz/SED_Fitter/blob/main/Images/Stellar_pop.png "Example of the UI")
+
+The Stellar Population Lab is a wrapper around Bagpipes to create a best fitting model to various JWST prism spectra using sliders controlling various parameters. 
 
 ![alt text](https://github.com/honzascholtz/SED_Fitter/blob/main/Images/UI.png "Example of the UI")
 
 The score is actually just a reduced $chi2^{2}$. The aim of this game is to try to get as low score as possible - reduce the difference between your best fit model and the data. The top panel displays the data in black and the current model in a red line. I have also put labels for the various emission lines. 
-
-The bottom panel are the residuals between your current model and the data. This should help visualise where you can find the best place for an improvement. The red dashed lines show the zero level on the plot. 
-
-The model we are trying to fit is quite simple, using exponential star formation history and nebular emission lines. The parameters of the model are as follows: 
-
-
-1) stellar mass of the source
-
-2) logU - Strength of the radiation field
-
-3) Metallicity - amount of elements heavier than Hydrogen and Helium in the galaxy
-
-4) 5)  Age, Tau - describe a pattern where the rate at which stars form in a galaxy decreases exponentially over time. This means that the star formation rate initially is high, but then declines, with the rate of decline becoming slower over time. The age sets when the star-formation episode started and Tau is the rate at which the star formation is declining 
-
-
-6) Dust - amount of dust in the galaxy (for scientists: Calzetti 2000)
 
 
 # How to run 
@@ -30,6 +30,8 @@ In order to run the code, we need to install Bagpipes from Adam Carnall. You can
 requirements:
 ```python
 dash==2.14.1
+
+flask
 
 dash-bootstrap-components==1.5.0
 
@@ -44,19 +46,17 @@ pandas==2.0.3
 bagpipes
 ```
 
-To run the redshifting code: 
+To run the entire lab suite: 
 ```python
 
-python Redshift_app.py
+python JADES_lab.py
 
 ```
+This will run the flask server and show you the following landing page:
 
-To run the the full SED fitting visualizer:
-```python
+![alt text](https://github.com/honzascholtz/SED_Fitter/blob/main/Images/Landing_page.png "Example of the UI")
 
-python Spectral_lab_app.py
-
-```
+You can then run click on the different buttons to launch the different "Labs".
 
 # Grid models updates
 
