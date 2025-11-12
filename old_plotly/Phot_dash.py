@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-JWST Stellar Population Lab - Plotly Dash Version
-Converted from matplotlib to web-deployable Dash app
+JWST Stellar Population Lab - Flask Integration
+Dash app integrated with Flask
 
-@author: jansen (converted to Dash)
+@author: jansen (converted to Flask)
 """
 
+from flask import Flask, render_template
 import sys
 import os
 import numpy as np
@@ -22,15 +23,25 @@ from astropy.convolution import Gaussian2DKernel, convolve_fft
 
 import astropy.io.fits as pyfits
 import astropy.stats as stats
+
 nan = float('nan')
 pi = np.pi
 e = np.e
 c = 3.*10**8
 
+# Create Flask server
+server = Flask(__name__)
+
 class JADES_photo_lab:
-    def __init__(self):
-        """Initialize the Dash application"""
-        self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+    def __init__(self, server):
+        """Initialize the Dash application with Flask server"""
+        # Create Dash app with Flask server
+        self.app = dash.Dash(
+            __name__, 
+            server=server,
+            url_base_pathname='/dashboard/',  # Dash app will be at /dashboard/
+            external_stylesheets=[dbc.themes.BOOTSTRAP]
+        )
         self.app.title = "JWST Image Lab"
         
         # Initialize data variables
@@ -85,37 +96,37 @@ class JADES_photo_lab:
             filepath = os.path.join(pth, 'Data/phot',config['file'])
             with pyfits.open(filepath) as hdu:
                 self.image = hdu['F444W'].data
-                self.image = self.image[ 84-self.image_lim:84+self.image_lim+1, 84-self.image_lim:84+self.image_lim+1]
+                self.image = self.image[84-self.image_lim:84+self.image_lim+1, 84-self.image_lim:84+self.image_lim+1]
                 
                 self.image_header = hdu['F444W'].header
                 self.image_error = stats.sigma_clipped_stats(self.image, sigma=3.0, maxiters=10)[2] * \
-                     np.ones_like(self.image)  # Use stddev as error estimate
+                     np.ones_like(self.image)
                 self.shape = self.image.shape
 
-                self.psf_pixel = 	0.145/(self.image_header['CDELT1']*3600 ) / 2.355 # arcsec/pixel
-                self.PSF_kernel = Gaussian2DKernel(self.psf_pixel)  # Placeholder for PSF kernel if needed later
-
-
-        #except Exception as e:
-        #    print(f"Error loading {config['file']}: {e}")      
+                self.psf_pixel = 0.145/(self.image_header['CDELT1']*3600) / 2.355
+                self.PSF_kernel = Gaussian2DKernel(self.psf_pixel)
     
     def generate_model(self):
         """Generate model spectrum with current parameters"""
-        
         x, y = np.meshgrid(np.arange(self.shape[1]), np.arange(self.shape[0]))
 
-        self.model = Sersic2D(amplitude=self.amplitude, r_eff=self.radius, n=self.index,\
-                               x_0=self.x+self.image_lim, y_0=self.y+ self.image_lim, ellip=self.ellipticity, theta=np.deg2rad(self.theta))
+        self.model = Sersic2D(
+            amplitude=self.amplitude, 
+            r_eff=self.radius, 
+            n=self.index,
+            x_0=self.x+self.image_lim, 
+            y_0=self.y+self.image_lim, 
+            ellip=self.ellipticity, 
+            theta=np.deg2rad(self.theta)
+        )
         self.model_image = self.model(x, y)
         self.model_image = convolve_fft(self.model_image, self.PSF_kernel)
-        # Calculate residual
         self.residual = (self.image - self.model_image)/self.image_error
         
     def calculate_score(self):
         """Calculate chi-squared score"""
-
         chi_squared = np.nansum(((self.image - self.model_image) / self.image_error) ** 2)
-        dof = np.sum(~np.isnan(self.image)) - 7  # Number of data points minus number of parameters
+        dof = np.sum(~np.isnan(self.image)) - 7
         self.score = chi_squared / dof if dof > 0 else np.nan
         return self.score
     
@@ -144,16 +155,15 @@ class JADES_photo_lab:
                 ], width=12)
             ]),
             
-            # Main plot only
+            # Main plot
             dbc.Row([
                 dbc.Col([
                     dcc.Graph(id="main-plot", style={'height': '600px'}),
                 ], width=12)
             ], style={'margin-bottom': '60px'}),
 
-            # Parameter sliders - organized in two columns
+            # Parameter sliders
             dbc.Row([
-                # Left column
                 dbc.Col([
                     html.Div([
                         html.Label("Peak size", className="fw-bold mb-2"),
@@ -184,7 +194,6 @@ class JADES_photo_lab:
                     ], className="mb-4")
                 ], width=6),
                 
-                # Right column
                 dbc.Col([
                     html.Div([
                         html.Label("X", className="fw-bold mb-2"),
@@ -212,8 +221,6 @@ class JADES_photo_lab:
     
     def setup_callbacks(self):
         """Setup Dash callbacks"""
-        
-        # Combined callback for all interactions
         @self.app.callback(
             Output("main-plot", "figure"),
             [Input("amp-slider", "value"),
@@ -229,7 +236,6 @@ class JADES_photo_lab:
         def update_app(*args):
             ctx = callback_context
             
-            # Update parameters from sliders
             self.amplitude = args[0]
             self.radius = args[1]
             self.index = args[2]
@@ -238,7 +244,6 @@ class JADES_photo_lab:
             self.y = args[5]
             self.ellipticity = args[6]
             
-            # Check if a dataset button was clicked
             if ctx.triggered:
                 trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
                 for i, dataset_key in enumerate(self.data_files.keys()):
@@ -248,50 +253,28 @@ class JADES_photo_lab:
                             self.load_data(dataset_key)
                         break
             
-            # Generate model with current parameters
             self.generate_model()
-            
-            # Create plot
             main_fig = self.create_main_plot()
             return main_fig
         
     def create_main_plot(self):
         """Create the main spectral plot with three panels"""
-        from plotly.subplots import make_subplots
-        import plotly.express as px
-
-        # Better scaling for astronomical images using asinh (arcsinh) stretch
-        # This is commonly used in astronomy as it handles both faint and bright features well
-        image_zoom = self.image
-
-        # Calculate robust statistics for better scaling
-        # Use percentiles to avoid outliers
-        vmin = np.percentile(image_zoom, 1)
-        vmax = np.percentile(image_zoom, 99.5)
-        
-        # Asinh scaling - excellent for astronomical images
-        # a parameter controls the transition between linear and log
-        a = (vmax - vmin) / 10  # Adjust this for more/less contrast
+        vmin = np.percentile(self.image, 1)
+        vmax = np.percentile(self.image, 99.5)
         
         def asinh_stretch(data, vmin, vmax, a):
-            """Apply asinh stretch - better than log for astro images"""
             data_normalized = (data - vmin) / (vmax - vmin)
             return np.arcsinh(data_normalized / a) / np.arcsinh(1 / a)
         
         image_scaled = asinh_stretch(self.image, vmin, vmax, 0.1)
         model_scaled = asinh_stretch(self.model_image, vmin, vmax, 0.1)
         
-        # For residual, we can use symmetric log or keep linear
-        # Using linear for residual to show positive and negative differences
-        
-        # Create subplots
         fig = make_subplots(
             rows=1, cols=3,
             subplot_titles=("Observed Image", "Your Model", "Difference (Observed - Model)"),
             horizontal_spacing=0.1
         )
         
-        # Add observed image (log scale)
         fig.add_trace(
             go.Heatmap(
                 z=image_scaled,
@@ -302,7 +285,6 @@ class JADES_photo_lab:
             row=1, col=1
         )
 
-        # Add model image (log scale)
         fig.add_trace(
             go.Heatmap(
                 z=model_scaled,
@@ -313,43 +295,81 @@ class JADES_photo_lab:
             row=1, col=2
         )
 
-        # Add residual (linear, with diverging colorscale)
         fig.add_trace(
             go.Heatmap(
                 z=self.residual,
-                colorscale='RdBu_r',  # Red-Blue diverging
+                colorscale='RdBu_r',
                 showscale=True,
-                zmid=0,  # Center the colorscale at 0
+                zmid=0,
                 zmin=-5, zmax=5,
-                colorbar=dict(x=1, len=0.8, title="Residual",)
+                colorbar=dict(x=1, len=0.8, title="Residual")
             ),
             row=1, col=3
         )
 
-        # Update layout
         fig.update_layout(
             title=f"JWST Photometry Fit, score= {self.calculate_score():.2f}, lower is better",
             template="plotly_white",
             height=600,
             showlegend=False
         )
-        # Force equal aspect ratio for all subplots
+        
         fig.update_xaxes(scaleanchor="y", scaleratio=1, row=1, col=1, constrain="domain")
         fig.update_yaxes(constrain="domain", row=1, col=1)
-        
         fig.update_xaxes(scaleanchor="y2", scaleratio=1, row=1, col=2, constrain="domain")
         fig.update_yaxes(constrain="domain", row=1, col=2)
-        
         fig.update_xaxes(scaleanchor="y3", scaleratio=1, row=1, col=3, constrain="domain")
         fig.update_yaxes(constrain="domain", row=1, col=3)
         
-        
         return fig
 
-    
-    
-    def run_server(self, debug=True, port=8051):
-        """Run the Dash server"""
-        self.app.run(debug=debug, port=port)
+
+# Flask routes
+@server.route('/')
+def index():
+    """Home page with link to dashboard"""
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>JWST Lab Home</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 50px auto;
+                padding: 20px;
+            }
+            h1 { color: #333; }
+            a {
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                margin-top: 20px;
+            }
+            a:hover { background-color: #0056b3; }
+        </style>
+    </head>
+    <body>
+        <h1>Welcome to JWST Photometry Lab</h1>
+        <p>This application allows you to fit galaxy models to JWST Imageobservations.</p>
+        <a href="/dashboard/">Launch Dashboard</a>
+    </body>
+    </html>
+    '''
+
+@server.route('/api/health')
+def health():
+    """API health check endpoint"""
+    return {'status': 'healthy', 'message': 'Flask + Dash integration working'}
 
 
+# Initialize the app
+dash_app = JADES_photo_lab(server)
+
+if __name__ == '__main__':
+    # Run the Flask server (which includes the Dash app)
+    server.run(debug=True, port=8051)
