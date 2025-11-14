@@ -114,36 +114,84 @@ class JADES_photo_lab:
             dbc.Row([dbc.Col([dcc.Graph(id="main-plot", style={'height': '600px'})], width=12)], style={'margin-bottom': '60px'}),
             dbc.Row([
                 dbc.Col([
-                    html.Div([html.Label("Peak size", className="fw-bold mb-2"),
-                              dcc.Slider(id="amp-slider", min=0.1, max=10, step=0.01, value=0.5,
-                                        marks={i: str(i) for i in range(11)},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Size (pix)", className="fw-bold mb-2"),
-                              dcc.Slider(id="size-slider", min=0, max=10, step=0.1, value=5,
-                                        marks={i: str(i) for i in range(11)},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Sersic index", className="fw-bold mb-2"),
-                              dcc.Slider(id="Sersic-slider", min=0.0, max=5, step=0.1, value=2,
-                                        marks={0: '0', 1: '1', 2: '2', 3: '3', 4: '4'},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Angle", className="fw-bold mb-2"),
-                              dcc.Slider(id="angle-slider", min=0.0, max=180, step=1, value=90,
-                                        marks={0: 'horizontal', 45: '45', 90: 'vertical', 135: '135', 180: 'horizontal'},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4")
+                    html.Div([
+                        html.Label([
+                            "Peak size ",
+                            html.Span("ℹ", id="tooltip-amp", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Making the galaxy brighter/fainter", target="tooltip-amp", placement="right"),
+                        dcc.Slider(id="amp-slider", min=0.1, max=10, step=0.01, value=0.5,
+                                marks={i: str(i) for i in range(11)},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Size (pix) ",
+                            html.Span("ℹ", id="tooltip-size", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("What is the size of the galaxy in pixels?", target="tooltip-size", placement="right"),
+                        dcc.Slider(id="size-slider", min=0, max=10, step=0.1, value=5,
+                                marks={i: str(i) for i in range(11)},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Sersic index ",
+                            html.Span("ℹ", id="tooltip-sersic", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Shape parameter: n=1 (exponential disk), n=4 (de Vaucouleurs/elliptical)", target="tooltip-sersic", placement="right"),
+                        dcc.Slider(id="Sersic-slider", min=0.0, max=5, step=0.1, value=2,
+                                marks={0: '0', 1: '1', 2: '2', 3: '3', 4: '4'},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Angle ",
+                            html.Span("ℹ", id="tooltip-angle", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("How is the galaxy angled on the sky?", target="tooltip-angle", placement="right"),
+                        dcc.Slider(id="angle-slider", min=0.0, max=180, step=1, value=90,
+                                marks={0: 'horizontal', 45: '45', 90: 'vertical', 135: '135', 180: 'horizontal'},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4")
                 ], width=6),
+                
                 dbc.Col([
-                    html.Div([html.Label("X", className="fw-bold mb-2"),
-                              dcc.Slider(id="x-slider", min=-5, max=5, step=0.1, value=0,
-                                        marks={i: str(i) for i in range(-5, 6)},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Y", className="fw-bold mb-2"),
-                              dcc.Slider(id="y-slider", min=-5, max=5, step=0.1, value=0,
-                                        marks={i: str(i) for i in range(-5, 6)},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Ellipticity", className="fw-bold mb-2"),
-                              dcc.Slider(id="ellipticity-slider", min=0, max=1, step=0.01, value=0.5,
-                                        marks={0: 'Circle', 0.5: '0.5', 1: 'Line'},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4")
+                    html.Div([
+                        html.Label([
+                            "X ",
+                            html.Span("ℹ", id="tooltip-x", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("X-position offset of galaxy center in pixels", target="tooltip-x", placement="right"),
+                        dcc.Slider(id="x-slider", min=-5, max=5, step=0.1, value=0,
+                                marks={i: str(i) for i in range(-5, 6)},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Y ",
+                            html.Span("ℹ", id="tooltip-y", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Y-position offset of galaxy center in pixels", target="tooltip-y", placement="right"),
+                        dcc.Slider(id="y-slider", min=-5, max=5, step=0.1, value=0,
+                                marks={i: str(i) for i in range(-5, 6)},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Ellipticity ",
+                            html.Span("ℹ", id="tooltip-ellip", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Galaxy ellipticity: 0=circular, 1=highly elongated", target="tooltip-ellip", placement="right"),
+                        dcc.Slider(id="ellipticity-slider", min=0, max=1, step=0.01, value=0.5,
+                                marks={0: 'Circle', 0.5: '0.5', 1: 'Line'},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4")
                 ], width=6)
             ], className="mt-3")
         ], fluid=True)

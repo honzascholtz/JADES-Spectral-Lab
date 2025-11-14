@@ -203,32 +203,73 @@ class Stellar_pop_lab:
             ], style={'margin-bottom': '60px'}),
             dbc.Row([
                 dbc.Col([
-                    html.Div([html.Label("Mass [log(M☉)]", className="fw-bold mb-2"),
-                              dcc.Slider(id="mass-slider", min=7, max=12, step=0.1, value=8,
-                                        marks={i: str(i) for i in range(7, 13)},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Radiation Strength [log U]", className="fw-bold mb-2"),
-                              dcc.Slider(id="logU-slider", min=-4.01, max=-1, step=0.1, value=-2.5,
-                                        marks={-4: '-4', -3: '-3', -2: '-2', -1: '-1'},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Heavy Elements [Z/Z☉]", className="fw-bold mb-2"),
-                              dcc.Slider(id="metal-slider", min=0.01, max=1.4, step=0.05, value=0.5,
-                                        marks={0: '0', 0.5: '0.5', 1: '1', 1.4: '1.4'},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4")
+                    html.Div([
+                        html.Label([
+                            "Mass [log(M☉)] ",
+                            html.Span("ℹ", id="tooltip-mass", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Total stellar mass of the galaxy in solar masses (logarithmic scale)", target="tooltip-mass", placement="right"),
+                        dcc.Slider(id="mass-slider", min=7, max=12, step=0.1, value=8,
+                                marks={i: str(i) for i in range(7, 13)},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Radiation Strength [log U] ",
+                            html.Span("ℹ", id="tooltip-logU", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Ionization parameter: ratio of ionizing photon density to gas density", target="tooltip-logU", placement="right"),
+                        dcc.Slider(id="logU-slider", min=-4.01, max=-1, step=0.1, value=-2.5,
+                                marks={-4: '-4', -3: '-3', -2: '-2', -1: '-1'},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Heavy Elements [Z/Z☉] ",
+                            html.Span("ℹ", id="tooltip-metal", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Metallicity: abundance of elements heavier than helium relative to the Sun", target="tooltip-metal", placement="right"),
+                        dcc.Slider(id="metal-slider", min=0.01, max=1.4, step=0.05, value=0.5,
+                                marks={0: '0', 0.5: '0.5', 1: '1', 1.4: '1.4'},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4")
                 ], width=6),
+                
                 dbc.Col([
-                    html.Div([html.Label("Age of Stars [log Gyr]", className="fw-bold mb-2"),
-                              dcc.Slider(id="age-slider", min=-2, max=1, step=0.1, value=-1,
-                                        marks={-2: '0.01', -1: '0.1', 0: '1', 1: '10'},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Decline of Stars [log Gyr]", className="fw-bold mb-2"),
-                              dcc.Slider(id="tau-slider", min=-2, max=1, step=0.1, value=-1.4,
-                                        marks={-2: '0.01', -1: '0.1', 0: '1', 1: '10'},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4"),
-                    html.Div([html.Label("Dust [Av mag]", className="fw-bold mb-2"),
-                              dcc.Slider(id="dust-slider", min=0, max=3, step=0.1, value=0.5,
-                                        marks={0: '0', 1: '1', 2: '2', 3: '3'},
-                                        tooltip={"placement": "bottom", "always_visible": True})], className="mb-4")
+                    html.Div([
+                        html.Label([
+                            "Age of Stars [log Gyr] ",
+                            html.Span("ℹ", id="tooltip-age", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Time since the onset of star formation in billions of years", target="tooltip-age", placement="right"),
+                        dcc.Slider(id="age-slider", min=-2, max=1, step=0.1, value=-1,
+                                marks={-2: '0.01', -1: '0.1', 0: '1', 1: '10'},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Decline of Stars [log Gyr] ",
+                            html.Span("ℹ", id="tooltip-tau", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("e-folding timescale: how quickly star formation declines (tau parameter)", target="tooltip-tau", placement="right"),
+                        dcc.Slider(id="tau-slider", min=-2, max=1, step=0.1, value=-1.4,
+                                marks={-2: '0.01', -1: '0.1', 0: '1', 1: '10'},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.Label([
+                            "Dust [Av mag] ",
+                            html.Span("ℹ", id="tooltip-dust", style={"color": "#17a2b8", "cursor": "pointer", "fontSize": "16px"})
+                        ], className="fw-bold mb-2"),
+                        dbc.Tooltip("Visual extinction: amount of light absorbed by interstellar dust", target="tooltip-dust", placement="right"),
+                        dcc.Slider(id="dust-slider", min=0, max=3, step=0.1, value=0.5,
+                                marks={0: '0', 1: '1', 2: '2', 3: '3'},
+                                tooltip={"placement": "bottom", "always_visible": True})
+                    ], className="mb-4")
                 ], width=6)
             ], className="mt-3")
         ], fluid=True)
@@ -286,7 +327,7 @@ class Stellar_pop_lab:
                                  yref='paper', bgcolor='white', bordercolor=color, 
                                  font=dict(size=16, color=color), borderwidth=1)
         
-        fig.update_layout(title=f"JWST Spectrum - z={self.z:.3f} | χ² Score: {self.calculate_score():.2f}",
+        fig.update_layout(title=f"JWST Spectrum | Score: {self.calculate_score():.2f}",
                          xaxis_title="Wavelength [μm]", yaxis_title="Flux [10⁻¹⁸ erg/s/cm²/Å]",
                          xaxis=dict(range=[0.5, 5.5]), template="plotly_white", height=600,
                          legend=dict(x=0.02, y=0.98), title_font_size=16)
