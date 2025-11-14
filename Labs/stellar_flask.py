@@ -188,6 +188,34 @@ class Stellar_pop_lab:
         sfr = sfh.sfh
         return age_universe, sfr
     
+    def get_instantaneous_sfr(self):
+        """Get the current star formation rate of the galaxy"""
+        age_universe, sfr = self.calculate_sfh()
+        # Get the most recent SFR (at the observation time)
+        return sfr[0]
+            
+    
+    def get_main_sequence(self, z):
+        """
+        Calculate the star-forming main sequence based on redshift
+        Using Speagle et al. (2014) relation
+        """
+        # Calculate cosmic time at given redshift
+        t = cosmo.age(z).value  # in Gyr
+        
+        # Mass range for plotting
+        log_mass = np.linspace(7, 12, 100)
+        
+        # Speagle et al. (2014) main sequence relation
+        # log(SFR) = (0.84 - 0.026*t) * log(M*) - (6.51 - 0.11*t)
+        log_sfr_ms = (0.84 - 0.026*t) * (log_mass - 9) + (0.84 - 0.026*t) * 9 - (6.51 - 0.11*t)
+        
+        # Scatter in main sequence (±0.3 dex)
+        log_sfr_upper = log_sfr_ms + 0.3
+        log_sfr_lower = log_sfr_ms - 0.3
+        
+        return log_mass, log_sfr_ms, log_sfr_upper, log_sfr_lower
+    
     def setup_layout(self):
         self.app.layout = dbc.Container([
             dbc.Row([dbc.Col([html.H1("JADES Stellar Population Lab", className="text-center mb-4")], width=12)]),
@@ -200,7 +228,7 @@ class Stellar_pop_lab:
             dbc.Row([
                 dbc.Col([dcc.Graph(id="main-plot", style={'height': '600px'})], width=9),
                 dbc.Col([dcc.Graph(id="sfh-plot", style={'height': '600px'})], width=3)
-            ], style={'margin-bottom': '60px'}),
+            ], style={'margin-bottom': '20px'}),
             dbc.Row([
                 dbc.Col([
                     html.Div([
@@ -271,12 +299,20 @@ class Stellar_pop_lab:
                                 tooltip={"placement": "bottom", "always_visible": True})
                     ], className="mb-4")
                 ], width=6)
+            ], className="mt-3"),
+            
+            # New row for SFR vs Mass plot
+            dbc.Row([
+                dbc.Col([
+                    html.Hr(className="my-4"),
+                    dcc.Graph(id="sfr-mass-plot", style={'height': '500px'})
+                ], width=12)
             ], className="mt-3")
         ], fluid=True)
     
     def setup_callbacks(self):
         @self.app.callback(
-            [Output("main-plot", "figure"), Output("sfh-plot", "figure")],
+            [Output("main-plot", "figure"), Output("sfh-plot", "figure"), Output("sfr-mass-plot", "figure")],
             [Input("mass-slider", "value"), Input("logU-slider", "value"), Input("metal-slider", "value"),
              Input("age-slider", "value"), Input("tau-slider", "value"), Input("dust-slider", "value")] +
             [Input(f"btn-{key}", "n_clicks") for key in self.data_files.keys()],
@@ -296,7 +332,7 @@ class Stellar_pop_lab:
                         break
             
             self.generate_model()
-            return self.create_main_plot(), self.create_sfh_plot()
+            return self.create_main_plot(), self.create_sfh_plot(), self.create_sfr_mass_plot()
     
     def create_main_plot(self):
         if self.data_wave is None:
@@ -364,4 +400,105 @@ class Stellar_pop_lab:
             print(f"Error creating SFH plot: {e}")
             fig.add_annotation(text="Error calculating SFH", x=0.5, y=0.5, xref="paper", yref="paper",
                              showarrow=False, font=dict(size=14, color="red"))
+        return fig
+    
+    def create_sfr_mass_plot(self):
+        """Create the SFR vs Mass plot with main sequence"""
+        fig = go.Figure()
+        
+        try:
+            # Get main sequence relation
+            log_mass, log_sfr_ms, log_sfr_upper, log_sfr_lower = self.get_main_sequence(self.z)
+            
+            # Plot main sequence as a shaded region
+            fig.add_trace(go.Scatter(
+                x=log_mass, y=10**log_sfr_upper,
+                mode='lines',
+                line=dict(width=0),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+            
+            fig.add_trace(go.Scatter(
+                x=log_mass, y=10**log_sfr_lower,
+                mode='lines',
+                line=dict(width=0),
+                fill='tonexty',
+                fillcolor='rgba(200, 200, 200, 0.3)',
+                name='Main Sequence ±0.3 dex',
+                showlegend=True
+            ))
+            
+            # Plot main sequence line
+            fig.add_trace(go.Scatter(
+                x=log_mass, y=10**log_sfr_ms,
+                mode='lines',
+                line=dict(color='gray', width=2, dash='dash'),
+                name=f'Main Sequence (z={self.z:.2f})',
+                showlegend=True
+            ))
+            
+            # Calculate and plot current galaxy position
+            current_sfr = self.get_instantaneous_sfr()
+            log_sfr = np.log10(current_sfr) if current_sfr > 0 else -5
+            # Determine if galaxy is on, above, or below main sequence
+            log_mass_current = self.Mass
+            log_sfr_ms_current = (0.84 - 0.026*cosmo.age(self.z).value) * (log_mass_current - 9) + \
+                                 (0.84 - 0.026*cosmo.age(self.z).value) * 9 - \
+                                 (6.51 - 0.11*cosmo.age(self.z).value)
+            
+            offset = log_sfr - log_sfr_ms_current
+            
+            if offset > 0.3:
+                galaxy_type = "Starburst"
+                marker_color = "red"
+            elif offset < -0.3:
+                galaxy_type = "Quiescent"
+                marker_color = "blue"
+            else:
+                galaxy_type = "Main Sequence"
+                marker_color = "green"
+            
+            # Plot the current galaxy
+            fig.add_trace(go.Scatter(
+                x=[self.Mass],
+                y=[current_sfr],
+                mode='markers',
+                marker=dict(
+                    size=15,
+                    color=marker_color,
+                    symbol='star',
+                    line=dict(color='black', width=2)
+                ),
+                name=f'Your Galaxy ({galaxy_type})',
+                showlegend=True,
+                text=f'Mass: {self.Mass:.2f}<br>SFR: {current_sfr:.2f} M☉/yr<br>Offset: {offset:.2f} dex',
+                hoverinfo='text'
+            ))
+            
+            # Update layout
+            fig.update_layout(
+                title=f"Star Formation Rate vs Stellar Mass (z={self.z:.2f})",
+                xaxis_title="log(M* / M☉)",
+                yaxis_title="SFR [M☉/yr]",
+                xaxis=dict(range=[7, 12]),
+                yaxis_type="log",
+                yaxis=dict(range=[-2, 3]),
+                template="plotly_white",
+                height=500,
+                title_font_size=16,
+                legend=dict(x=0.02, y=0.98, bgcolor='rgba(255,255,255,0.8)'),
+                hovermode='closest'
+            )
+            
+        except Exception as e:
+            print(f"Error creating SFR-Mass plot: {e}")
+            fig.add_annotation(
+                text=f"Error creating plot: {str(e)}",
+                x=0.5, y=0.5,
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=14, color="red")
+            )
+        
         return fig
